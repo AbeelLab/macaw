@@ -80,8 +80,12 @@
 		<mkdir dir="${dist}" />
 
 		<copy todir="${dist}/">
-
-			<fileset refid="jarfiles" />
+			 <fileset dir="lib/" >
+                <include name="*.jar" />
+            </fileset>
+			<fileset dir="lib_compile/scala-2.10.2">
+				<include name="scala-library.jar" />
+			</fileset>
 		</copy>
 
 		<propertyfile file="${build}/tool.properties">
