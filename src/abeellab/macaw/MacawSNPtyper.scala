@@ -54,16 +54,16 @@ object MacawSNPtyper extends Tool {
 
    
     val parser = new scopt.OptionParser[Config]("java -jar macaw.jar") {
-      opt[String]("marker") required () action { (x, c) => c.copy(markerFile = x) } text ("File containing marker sequences. This file has to be a multi-fasta file with the headers indicating the name of the markers.") //, { v: String => config.spacerFile = v })
+      opt[String]("marker") action { (x, c) => c.copy(markerFile = x) } text ("File containing marker sequences. This file has to be a multi-fasta file with the headers indicating the name of the markers.") //, { v: String => config.spacerFile = v })
       opt[String]('o', "output") action { (x, c) => c.copy(outputFile = x) } text ("File where you want the output to be written")
-      opt[Int]('t',"threshold")action { (x, c) => c.copy(threshold = x) } text ("Threshold to determine absence or presence of a marker")
+      opt[Int]('t',"threshold")action { (x, c) => c.copy(threshold = x) } text ("Threshold to determine absence or presence of a marker (default=5)")
       
       arg[File]("<file>...") unbounded () required () action { (x, c) => c.copy(files = c.files :+ x) } text ("input files")
 
     }
     parser.parse(args, Config()) map { config =>
       /* Load spacers */
-      val lines = /*if (config.spacerFile != null)*/ tLines(config.markerFile).toList // else scala.io.Source.fromInputStream(LorikeetSpoligotyper.getClass().getResourceAsStream("/subset3LongMarkers.txt")).getLines().toList;
+      val lines = if (config.markerFile != null) tLines(config.markerFile).toList  else scala.io.Source.fromInputStream(MacawSNPtyper.getClass().getResourceAsStream("/subset3LongMarkers.txt")).getLines().toList;
       val pw = if (config.outputFile != null) new PrintWriter(config.outputFile) else new PrintWriter(System.out)
 
       pw.println(generatorInfo)
@@ -156,7 +156,7 @@ object MacawSNPtyper extends Tool {
           idx += 1
           assert(gs._2.size == 2)
           println("GGS: " + gs)
-          val z1 = (gs._2.map(p => cm.get(p._1).toInt)).toList //.cm.get("" + i) + cm.get("RC_" + i)
+          val z1 = (gs._2.map(p => cm.get(p._1).toInt)).toList
           val z = z1.sum
 
 
