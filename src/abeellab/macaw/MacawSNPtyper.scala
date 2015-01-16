@@ -138,12 +138,6 @@ object MacawSNPtyper extends Tool {
 
         pw.println("# number of spacers = " + spacers.size)
         
-        pw.println("## == SNP typing ==")
-        for ((x, y) <- spacers) {
-          val z = cm.get(x)
-          pw.println("#" + x + "\t" + y + "\t" + z)
-        }
-
         val groupedSpacers = spacers.groupBy(pair => pair._1.replaceAll("RC_", ""))
 
         println("GS: " + groupedSpacers.mkString("\n"))
