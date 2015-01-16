@@ -78,8 +78,8 @@
 		<mkdir dir="${build}" />
 
 		<mkdir dir="${dist}" />
-
-		<copy todir="${dist}/">
+		<mkdir dir="${dist}/${project}-${version}" />
+		<copy todir="${dist}/${project}-${version}">
 			 <fileset dir="lib/" >
                 <include name="*.jar" />
             </fileset>
@@ -117,7 +117,7 @@
 			</fileset>
 		</copy>
 
-		<jar basedir="${build}" destfile="${dist}/${jar}">
+		<jar basedir="${build}" destfile="${dist}/${project}-${version}/${jar}">
 
 			<manifest>
 
