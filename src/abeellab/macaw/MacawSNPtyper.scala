@@ -70,7 +70,6 @@ object MacawSNPtyper extends Tool {
 
       pw.println("# Marker input: " + config.markerFile)
 
-      println(lines)
       val in = (lines.grouped(2).map(f => (f(0).substring(1), f(1))).toList)
 
       val repeatSequences = List(("repeat", "GTTTCCGTCCCCTCTCGGGGTTTTGGGTCTGACGA"), ("left_repeat", "GTTTCCGTCCCC"), ("middle_repeat", "TCTCGGGGTTTT"), ("right_repeat", "GGGTCTGACGA"))
