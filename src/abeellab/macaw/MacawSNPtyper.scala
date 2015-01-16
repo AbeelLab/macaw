@@ -63,13 +63,14 @@ object MacawSNPtyper extends Tool {
     }
     parser.parse(args, Config()) map { config =>
       /* Load spacers */
-      val lines = if (config.markerFile != null) tLines(config.markerFile).toList  else scala.io.Source.fromInputStream(MacawSNPtyper.getClass().getResourceAsStream("/subset3LongMarkers.txt")).getLines().toList;
+      val lines = if (config.markerFile != null) tLines(config.markerFile).toList  else scala.io.Source.fromInputStream(MacawSNPtyper.getClass().getResourceAsStream("/subset3LongMarkers.txt")).getLines().filterNot(f=>f.startsWith("#")||f.trim.size==0).toList;
       val pw = if (config.outputFile != null) new PrintWriter(config.outputFile) else new PrintWriter(System.out)
 
       pw.println(generatorInfo)
 
       pw.println("# Marker input: " + config.markerFile)
 
+      println(lines)
       val in = (lines.grouped(2).map(f => (f(0).substring(1), f(1))).toList)
 
       val repeatSequences = List(("repeat", "GTTTCCGTCCCCTCTCGGGGTTTTGGGTCTGACGA"), ("left_repeat", "GTTTCCGTCCCC"), ("middle_repeat", "TCTCGGGGTTTT"), ("right_repeat", "GGGTCTGACGA"))
