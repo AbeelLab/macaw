@@ -86,6 +86,9 @@
 			<fileset dir="lib_compile/scala-2.10.2">
 				<include name="scala-library.jar" />
 			</fileset>
+			<fileset dir="python">
+				<include name="*.py" />
+			</fileset>
 		</copy>
 
 		<propertyfile file="${build}/tool.properties">
@@ -115,6 +118,7 @@
 
 				
 			</fileset>
+			
 		</copy>
 
 		<jar basedir="${build}" destfile="${dist}/${project}-${version}/${jar}">
