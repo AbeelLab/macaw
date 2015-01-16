@@ -11,7 +11,7 @@ Quick-run recipe:
 
 Versioned production releases: https://github.com/AbeelLab/macaw/releases
 
-Nightly development builds: 
+Nightly development builds: http://www.abeellab.org/jenkins/macaw/ 
 
 Source-code: https://github.com/AbeelLab/macaw.git
 
