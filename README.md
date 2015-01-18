@@ -65,5 +65,5 @@ Required arguments:
 
 
 # Requirements
-- Python 2.7 + NumPy+ SCiPy 
+- Python 2.7 + NumPy + SciPy 
 - Java 1.7+
