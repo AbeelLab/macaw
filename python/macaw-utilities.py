@@ -165,13 +165,13 @@ subparsers = parser.add_subparsers(title='title', description='description')
 
 # parser for condense command
 parser_c = subparsers.add_parser('condense', help='condense help')
-parser_c.add_argument("-d", "--directory", action="store", metavar="<macaw input file directory>", dest="macawDir", help="Directory with all .interpreted.macaw files in it")
+parser_c.add_argument("-d", "--directory", action="store", metavar="<input file directory>", dest="macawDir", help="Directory with all .interpreted.macaw files in it")
 parser_c.add_argument("-o", "--output", action="store", metavar="<output file>", dest="outputFile", help="Output file")
 parser_c.set_defaults(func=macawCondense)
 
 # parser for interpret command
 parser_i = subparsers.add_parser('interpret', help='interpret help')
-parser_i.add_argument("-m", "--macaw", action="store", metavar="<macaw input file>", dest="macawFile", help="Macaw input file")
+parser_i.add_argument("-m", "--macaw", action="store", metavar="<marker detection file>", dest="macawFile", help="Macaw marker detection file")
 parser_i.add_argument("-o", "--output", action="store", metavar="<output file>", dest="outputFile", help="Output file prefix")
 parser_i.set_defaults(func=macawInterpret)
 
