@@ -32,11 +32,13 @@ import be.abeel.util.FrequencyMapUtils
  */
 object MacawSNPtyper extends Tool {
 
-  override val version="""
+  override val version = """
     2015/01/16:    Initial release
+    2015/03/03:    Changed output logic to only output a single marker type for all files by default
+		  		   Added option to revert to the old behavior
     
     """
-  
+
   def revcomp(read: Array[Byte]) = {
     val out = Array.ofDim[Byte](read.length)
     for (i <- 0 until read.length) {
@@ -44,7 +46,7 @@ object MacawSNPtyper extends Tool {
     }
     out
   }
-  case class Config(val markerFile: String = null, val outputFile: String = null, files: List[File] = List(),val threshold:Int=5)
+  case class Config(val detailed: Boolean = false, val markerFile: String = null, val outputFile: String = null, files: List[File] = List(), val threshold: Int = 5)
   /**
    * args(0) = output file
    *
@@ -52,18 +54,17 @@ object MacawSNPtyper extends Tool {
    */
   def main(args: Array[String]): Unit = {
 
-   
     val parser = new scopt.OptionParser[Config]("java -jar macaw.jar") {
       opt[String]("marker") action { (x, c) => c.copy(markerFile = x) } text ("File containing marker sequences. This file has to be a multi-fasta file with the headers indicating the name of the markers.") //, { v: String => config.spacerFile = v })
       opt[String]('o', "output") action { (x, c) => c.copy(outputFile = x) } text ("File where you want the output to be written")
-      opt[Int]('t',"threshold")action { (x, c) => c.copy(threshold = x) } text ("Threshold to determine absence or presence of a marker (default=5)")
-      
+      opt[Int]('t', "threshold") action { (x, c) => c.copy(threshold = x) } text ("Threshold to determine absence or presence of a marker (default=5)")
+      opt[Unit]("detailed") action { (_, c) => c.copy(detailed = true) } text ("Output digital marker types per input file. (default=false) ")
       arg[File]("<file>...") unbounded () required () action { (x, c) => c.copy(files = c.files :+ x) } text ("input files")
 
     }
     parser.parse(args, Config()) map { config =>
       /* Load spacers */
-      val lines = if (config.markerFile != null) tLines(config.markerFile).toList  else scala.io.Source.fromInputStream(MacawSNPtyper.getClass().getResourceAsStream("/subset3LongMarkers.txt")).getLines().filterNot(f=>f.startsWith("#")||f.trim.size==0).toList;
+      val lines = if (config.markerFile != null) tLines(config.markerFile).toList else scala.io.Source.fromInputStream(MacawSNPtyper.getClass().getResourceAsStream("/subset3LongMarkers.txt")).getLines().filterNot(f => f.startsWith("#") || f.trim.size == 0).toList;
       val pw = if (config.outputFile != null) new PrintWriter(config.outputFile) else new PrintWriter(System.out)
 
       pw.println(generatorInfo)
@@ -80,7 +81,6 @@ object MacawSNPtyper extends Tool {
 
       val spacers = forwardSpacers ++ rcSpacers
 
-    
       pw.println("# Input files: " + config.files)
 
       /* Prep index */
@@ -92,13 +92,14 @@ object MacawSNPtyper extends Tool {
 
       val nf = NumberFormat.getInstance(Locale.US)
       nf.setMaximumFractionDigits(6)
-
+      var cm = new CountMap[String]
       for (inputFile <- config.files) {
         pw.println("# Processing: " + inputFile)
         /* Connect to bam file*/
         val inputSam = new SAMFileReader(inputFile);
 
-        val cm = new CountMap[String]
+        if (config.detailed)
+          cm = new CountMap[String]
 
         /* Iterate over bamfile */
         val it: SAMRecordIterator = inputSam.iterator()
@@ -127,48 +128,54 @@ object MacawSNPtyper extends Tool {
           if (progress % 100000 == 0) {
             print(".")
 
-
           }
         }
         println
 
         /* close bam file */
         it.close
-        val listx = spacers.filter(p => !p._1.contains("repeat")).map(f => cm.get(f._1).toInt)
 
-        pw.println("# number of spacers = " + spacers.size)
-        
-        val groupedSpacers = spacers.groupBy(pair => pair._1.replaceAll("RC_", ""))
-
-        println("GS: " + groupedSpacers.mkString("\n"))
-        val buffer = new StringBuffer()
-        pw.println("# Marker\tread-depth\tp-value\tA/P")
-        var idx = 0
-
-        println("KS: " + cm.keySet())
-        for (gs <- groupedSpacers.filterNot(_._1.contains("repeat")).toList.sortBy(_._1)) {
-          idx += 1
-          assert(gs._2.size == 2)
-          println("GGS: " + gs)
-          val z1 = (gs._2.map(p => cm.get(p._1).toInt)).toList
-          val z = z1.sum
-
-
-          pw.println(gs._1 + "\t" + z + "\t" + nf.format(if (z >= config.threshold) 0 else 1) + "\t" + (if (z >= config.threshold) "present" else "absent"))
-          buffer.append(if (z >= config.threshold) "1" else "0")
-          if (idx % 10 == 0)
-            buffer.append(" ")
-
-        }
-        pw.println("## Digital markertype: \n" + buffer.toString().grouped(10).mkString(" "))
-        pw.println()
+        if (config.detailed)
+          output(pw, spacers, cm, config)
 
       }
+      if (!config.detailed)
+        output(pw, spacers, cm, config)
       pw.close
     } getOrElse {
       println("Could not interpret command-line arguments, quitting!")
       System.exit(-1)
     }
 
+  }
+
+  def output(pw: PrintWriter, spacers: List[(String, String)], cm: CountMap[String], config: Config) {
+    val listx = spacers.filter(p => !p._1.contains("repeat")).map(f => cm.get(f._1).toInt)
+
+    pw.println("# number of spacers = " + spacers.size)
+
+    val groupedSpacers = spacers.groupBy(pair => pair._1.replaceAll("RC_", ""))
+
+    println("GS: " + groupedSpacers.mkString("\n"))
+    val buffer = new StringBuffer()
+    pw.println("# Marker\tread-depth\tp-value\tA/P")
+    var idx = 0
+
+    println("KS: " + cm.keySet())
+    for (gs <- groupedSpacers.filterNot(_._1.contains("repeat")).toList.sortBy(_._1)) {
+      idx += 1
+      assert(gs._2.size == 2)
+      println("GGS: " + gs)
+      val z1 = (gs._2.map(p => cm.get(p._1).toInt)).toList
+      val z = z1.sum
+
+      pw.println(gs._1 + "\t" + z + "\t" + nf.format(if (z >= config.threshold) 0 else 1) + "\t" + (if (z >= config.threshold) "present" else "absent"))
+      buffer.append(if (z >= config.threshold) "1" else "0")
+      if (buffer.length() % 11 == 10)
+        buffer.append(" ")
+
+    }
+    pw.println("## Digital markertype: \n" + buffer.toString().grouped(10).mkString(" "))
+    pw.println()
   }
 }
